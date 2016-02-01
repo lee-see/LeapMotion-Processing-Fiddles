@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.leapmotion.leap.Bone;
 import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Finger;
 import com.leapmotion.leap.Frame;
@@ -28,9 +29,12 @@ ConcurrentMap<Integer, Integer> fingerColors;
 ConcurrentMap<Integer, Integer> toolColors;
 ConcurrentMap<Integer, Integer> handColors;
 ConcurrentMap<Integer, Vector> fingerPositions;
+ConcurrentMap<Integer, Vector> bonePositions;
 ConcurrentMap<Integer, Vector> toolPositions;
 ConcurrentMap<Integer, Vector> handPositions;
-
+int[] backColors;
+int[] change;
+int i = 0;
 void setup()
 {
   size(800,450);
@@ -45,13 +49,35 @@ void setup()
   fingerPositions = new ConcurrentHashMap<Integer, Vector>();
   toolPositions = new ConcurrentHashMap<Integer, Vector>();
     handPositions = new ConcurrentHashMap<Integer,Vector>();
+      bonePositions = new ConcurrentHashMap<Integer, Vector>();
+      backColors = new int[3];
+      change = new int[3];
+      change[0] = 2;
+      change[1] = 2;
+      change[2] = 2;
 }
-
+color backgroundC()
+{
+  if (backColors[i] <= 10){
+      change[i] = 2;
+      backColors[i] += change[i];
+    }else if (backColors[i] >= 220){
+      change[i] = -2;
+      backColors[i] += change[i];
+      if (i == 2){
+        i=0;
+      }else{
+        i+=1;
+      }
+    }else{
+      backColors[i] += change[i];
+    }
+  return color(backColors[0],backColors[1],backColors[2]);
+}
 void draw()
 {
-  fill(0);
+  fill(backgroundC());
   rect(0, 0, width, height);
-  
   for (Map.Entry entry : toolPositions.entrySet())
   {
     Integer toolId = (Integer) entry.getKey();
@@ -88,6 +114,20 @@ void draw()
       line(handX,handY, Fx, Fy);
       }
    }
+   /*
+  for (Map.Entry Fentry : bonePositions.entrySet()){
+    //Integer boneId = (Integer) Fentry.getKey();
+     Vector Fposition = (Vector) Fentry.getValue();
+    
+    color s = color(40,40,40);
+    fill(s);
+    noStroke();
+    float Fx = leapMotion.leapToSketchX(Fposition.getX());
+    float Fy = leapMotion.leapToSketchY(Fposition.getY());
+    ellipse(Fx,Fy, 5.0, 5.0);
+    
+   }
+   */
   }
 }
 
@@ -102,6 +142,14 @@ void onFrame(final Controller controller)
     handColors.putIfAbsent(handId,hc);
     handPositions.put(handId, hand.stabilizedPalmPosition());
     for (Finger finger : hand.fingers()){
+      
+      int boneId = -1;
+       for(Bone.Type boneType : Bone.Type.values()) {
+          Bone bone = finger.bone(boneType);
+          boneId = boneId + 1;
+          bonePositions.put(boneId,bone.center());
+        }
+        
        int fingerId = finger.id();
       //color c = color(random(0, 255), random(0, 255), random(0, 255));
       fingerColors.putIfAbsent(fingerId, handId);
